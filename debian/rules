@@ -15,12 +15,12 @@ PKGVERSION := $(word 2, $(changelog_values))
 
 distribution := $(shell lsb_release -is)
 
-export VER=2.6
-export NVER=2.7
-export PVER=python2.6
+export VER=2.7
+export NVER=2.8
+export PVER=python2.7
 
 PREVVER	:= $(shell awk '/^python/ && NR > 1 {print substr($$2,2,length($$2)-2); exit}' debian/changelog)
-PREVVER := 2.6.6-1~
+PREVVER := 2.7.3-1~
 
 PWD		:= $(shell pwd)
 
@@ -37,6 +37,8 @@ ifneq ($(with_doc),yes)
 endif
 
 build: stamp-build
+build-arch: stamp-build
+build-indep: stamp-build
 stamp-build:
 	touch stamp-build
 
@@ -149,7 +151,7 @@ stamp-dh_python:
 	dh_installdirs
 	make check_versions
 	DESTDIR=debian/python PREFIX=/usr make install-dev
-	DESTDIR=debian/python-minimal PREFIX=/usr make install-runtime
+	DESTDIR=debian/python-minimal PREFIX=/usr make install-runtime manpages
 	# disabled by default, run manually if you want to update it
 	# (requires apt-file and network connection)
 	#make -C pydist dist_fallback
@@ -164,9 +166,12 @@ binary-indep: build install stamp-doc
 	: # provide the python and python.1 defaults
 	mkdir -p debian/python-minimal/usr/bin
 	ln -sf python$(VER) debian/python-minimal/usr/bin/python
+	ln -sf python$(VER) debian/python-minimal/usr/bin/python2
 	mkdir -p debian/python-minimal/usr/share/man/man1
 	ln -sf python$(VER).1.gz \
 		debian/python-minimal/usr/share/man/man1/python.1.gz
+	ln -sf python$(VER).1.gz \
+		debian/python-minimal/usr/share/man/man1/python2.1.gz
 
 	: # 
 	mkdir -p debian/python-minimal/usr/share/python
@@ -177,7 +182,7 @@ binary-indep: build install stamp-doc
 		debian/python-minimal/usr/share/python/
 	install -m 644 debian/pyversions.1 \
 		debian/python-minimal/usr/share/man/man1/
-	dh_link -ppython /usr/share/python/pyversions.py /usr/bin/pyversions
+	dh_link -ppython-minimal /usr/share/python/pyversions.py /usr/bin/pyversions
 
 #	install -m 755 debian/pycompile \
 #		debian/python-minimal/usr/bin/
@@ -204,6 +209,8 @@ binary-indep: build install stamp-doc
 		debian/python/usr/share/man/man1/pygettext.1.gz
 	ln -sf pdb$(VER).1.gz \
 		debian/python/usr/share/man/man1/pdb.1.gz
+	ln -sf 2to3-$(VER).1.gz \
+		debian/python/usr/share/man/man1/2to3.1.gz
 
 	mkdir -p debian/python/usr/share/doc/python
 	cp -a debian/python-policy.{html,sgml,txt} \
@@ -260,7 +267,7 @@ endif
 	install -m 644 debian/idle.1 debian/idle/usr/share/man/man1/idle.1
 
 	mkdir -p debian/idle/usr/share/pixmaps
-	ln -sf python.xpm debian/python/usr/share/pixmaps/idle.xpm
+	ln -sf python.xpm debian/idle/usr/share/pixmaps/idle.xpm
 
 	mkdir -p debian/idle/usr/share/applications
 	cp -p debian/idle.desktop debian/idle/usr/share/applications/

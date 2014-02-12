@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Copyright © 2010 Piotr Ożarowski <piotr@debian.org>
+# Copyright © 2010-2012 Piotr Ożarowski <piotr@debian.org>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,10 +21,10 @@
 
 import logging
 from debpython.pydist import parse_pydep, guess_dependency
-from debpython.version import SUPPORTED, DEFAULT, debsorted, vrepr, vrange_str
+from debpython.version import DEFAULT, SUPPORTED, debsorted, vrepr, vrange_str
 
 # minimum version required for pycompile/pyclean
-MINPYCDEP = 'python (>= 2.6.6-3+squeeze3~)'
+MINPYCDEP = 'python (>= 2.6.6-7~)'
 
 log = logging.getLogger(__name__)
 
@@ -32,9 +32,8 @@ log = logging.getLogger(__name__)
 class Dependencies(object):
     """Store relations (dependencies, etc.) between packages."""
 
-    def __init__(self, package, use_breaks=False):
+    def __init__(self, package):
         self.package = package
-        self.use_breaks = use_breaks
         self.depends = []
         self.recommends = []
         self.suggests = []
@@ -89,36 +88,27 @@ class Dependencies(object):
     def parse(self, stats, options):
         log.debug('generating dependencies for package %s', self.package)
 
-        pub_vers = sorted(stats['public_vers'].union(stats['public_ext']))
+        pub_vers = sorted(stats['public_vers'].union(stats['ext']))
         if pub_vers:
             dbgpkg = self.package.endswith('-dbg')
             tpl = 'python-dbg' if dbgpkg else 'python'
-            supported = sorted(SUPPORTED)
-            min_supp = supported[0]
-            max_supp = supported[-1]
             minv = pub_vers[0]
             maxv = pub_vers[-1]
-            if dbgpkg:
-                tpl2 = 'python%d.%d-dbg'
-            else:
-                tpl2 = 'python%d.%d'
-            self.depend(' | '.join(tpl2 % i for i in debsorted(pub_vers)))
+            # generating "python2.X | python2.Y | python2.Z" dependencies
+            # disabled (see #625740):
+            #if dbgpkg:
+            #    tpl2 = 'python%d.%d-dbg'
+            #else:
+            #    tpl2 = 'python%d.%d'
+            #self.depend(' | '.join(tpl2 % i for i in debsorted(pub_vers)))
 
-            # additional Breaks/Depends to block python package transitions
-            if self.use_breaks:
-                if minv <= min_supp:
-                    self.break_("%s (<< %d.%d)" % \
-                                (tpl, minv[0], minv[1]))
-                if maxv >= max_supp:
-                    self.break_("%s (>= %d.%d)" % \
-                                (tpl, maxv[0], maxv[1] + 1))
-            else:
-                if minv <= DEFAULT:
-                    self.depend("%s (>= %d.%d)" % \
-                                (tpl, minv[0], minv[1]))
-                if maxv >= DEFAULT:
-                    self.depend("%s (<< %d.%d)" % \
-                                (tpl, maxv[0], maxv[1] + 1))
+            # additional Depends to block python package transitions
+            if minv <= DEFAULT:
+                self.depend("%s (>= %d.%d)" % \
+                            (tpl, minv[0], minv[1]))
+            if maxv >= DEFAULT:
+                self.depend("%s (<< %d.%d)" % \
+                            (tpl, maxv[0], maxv[1] + 1))
 
         # make sure pycompile binary is available
         if stats['compile']:
@@ -129,27 +119,41 @@ class Dependencies(object):
 
         for private_dir, details in stats['private_dirs'].iteritems():
             versions = list(v for i, v in details.get('shebangs', []) if v)
-            if len(versions) > 1:
-                log.error('more than one Python dependency from shebangs'
-                          '(%s shebang versions: %s)', private_dir, versions)
-                exit(13)
-            elif len(versions) == 1:  # one hardcoded version
-                self.depend("python%d.%d" % versions[0])
-                # TODO: if versions[0] not in requested_versions: FTBFS
-            elif details.get('compile', False):
-                # no hardcoded versions, but there's something to compile
+
+            for v in versions:
+                if v in SUPPORTED:
+                    self.depend("python%d.%d" % v)
+                else:
+                    log.info('dependency on python%s (from shebang) ignored'
+                             ' - it\'s not supported anymore', vrepr(v))
+            # /usr/bin/python shebang → add python to Depends
+            if any(True for i, v in details.get('shebangs', []) if v is None):
+                self.depend('python')
+
+            if details.get('compile', False):
                 self.depend(MINPYCDEP)
                 args = ''
                 vr = options.vrange
-                if vr:
+                if len(versions) == 1:  # only one version from shebang
+                    args += "-V %s" % vrepr(versions[0])
+                elif vr:
+                    # if there are no hardcoded versions in shebang or there
+                    # are scripts for different Python versions: compile with
+                    # default Python version (or the one requested via X-P-V)
                     args += "-V %s" % vrange_str(vr)
-                    if vr[0]:  # minimum version specified
-                        self.depend("python (>= %s)" % vrepr(vr[0]))
-                    if vr[1]:  # maximum version specified
-                        self.depend("python (<< %s)" % vrepr(vr[1]))
+                    if vr == (None, None):
+                        pass
+                    elif vr[0] == vr[1]:
+                        self.depend("python%s" % vrepr(vr[0]))
+                    else:
+                        if vr[0]:  # minimum version specified
+                            self.depend("python (>= %s)" % vrepr(vr[0]))
+                        if vr[1]:  # maximum version specified
+                            self.depend("python (<< %d.%d)" % \
+                                       (vr[1][0], vr[1][1] + 1))
 
                 for pattern in options.regexpr or []:
-                    args += " -X '%s'" % pattern.replace("'", r"\'")
+                    args += " -X '%s'" % pattern.replace("'", r"'\''")
                 self.rtscript((private_dir, args))
 
         if options.guess_deps:
