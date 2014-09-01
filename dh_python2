@@ -32,7 +32,6 @@ from os.path import isabs, isdir, islink, exists, join, normpath, realpath,\
  split
 from shutil import rmtree, copy as fcopy
 from stat import ST_MODE, S_IXUSR, S_IXGRP, S_IXOTH
-sys.path.insert(1, '/usr/share/python/')
 from debpython.debhelper import DebHelper
 from debpython.depends import Dependencies
 from debpython.version import SUPPORTED, DEFAULT, \
@@ -85,7 +84,7 @@ def fix_locations(package):
                               'found in two locations:\n %s\n %s',
                               ver, location, found_versions[ver])
                     exit(2)
-                log.warn('Python %s should install files in %s. '
+                log.info('Python %s should install files in %s. '
                          'Did you forget "--install-layout=deb"?',
                          ver, sitedir(version))
                 if not isdir(dstdir):
@@ -124,11 +123,8 @@ def share(package, stats, options):
                 dc = dircmp(dir1, dir2)
                 share_2x(dir1, dir2, dc)
     elif len(pubvers) == 1:
-        # TODO: remove this once file conflicts will not be needed anymore
-        move_to_pyshared(sitedir(pubvers[0], package))
-
-    for version in stats['ext']:
-        create_ext_links(sitedir(version, package))
+        # don't install into pyshared anymore
+        pass
 
     if options.guess_versions and pubvers:
         for version in get_requested_versions(options.vrange):

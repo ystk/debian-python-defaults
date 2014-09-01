@@ -7,7 +7,7 @@ clean:
 	make -C tests clean
 	make -C pydist clean
 	find . -name '*.py[co]' -delete
-	rm -f .coverage $(MANPAGES)
+	rm -f .coverage
 
 install-dev:
 	$(INSTALL) -m 755 -d $(DESTDIR)$(PREFIX)/bin \
@@ -16,7 +16,8 @@ install-dev:
 		$(DESTDIR)$(PREFIX)/share/perl5/Debian/Debhelper/Sequence/
 	$(INSTALL) -m 755 runtime.d/* $(DESTDIR)$(PREFIX)/share/python/runtime.d/
 	$(INSTALL) -m 644 autoscripts/* $(DESTDIR)$(PREFIX)/share/debhelper/autoscripts/
-	$(INSTALL) -m 755 dh_python2 $(DESTDIR)$(PREFIX)/bin/
+	$(INSTALL) -m 755 dh_python2 $(DESTDIR)$(PREFIX)/share/python/
+	$(INSTALL) -m 755 dh_python2.py $(DESTDIR)$(PREFIX)/bin/dh_python2
 	$(INSTALL) -m 644 python2.pm $(DESTDIR)$(PREFIX)/share/perl5/Debian/Debhelper/Sequence/
 
 install-runtime:
@@ -26,14 +27,6 @@ install-runtime:
 	$(INSTALL) -m 755 pyclean $(DESTDIR)$(PREFIX)/bin/
 
 install: install-dev install-runtime
-
-%.1: %.rst
-	rst2man $< > $@
-
-%.html: %.rst
-	rst2html $< > $@
-
-manpages: $(MANPAGES)
 
 dist_fallback:
 	make -C pydist $@
@@ -55,9 +48,6 @@ pdebuild:
 # TESTS
 nose:
 	nosetests --with-doctest --with-coverage
-
-unittests:
-	python2.7 -m unittest discover -v
 
 tests: nose
 	make -C tests

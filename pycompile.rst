@@ -6,6 +6,9 @@
 byte compile Python source files
 --------------------------------
 
+:Manual section: 1
+:Author: Piotr Ożarowski, 2012-2013
+
 SYNOPSIS
 ========
   pycompile [-V [X.Y][-][A.B]] DIR_OR_FILE [-X REGEXPR]
@@ -32,7 +35,8 @@ OPTIONS
 -v, --verbose	turn verbose mode on
 
 -p PACKAGE, --package=PACKAGE	specify Debian package name whose files should
-  be bytecompiled
+  be bytecompiled (combining with DIR_OR_FILE will additionally limit list of
+  files)
 
 -V VRANGE	force private modules to be bytecompiled with Python
   version from given range, regardless of the default Python version in the

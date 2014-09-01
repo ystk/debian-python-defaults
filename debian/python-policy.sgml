@@ -32,7 +32,11 @@
         <name>Scott Kitterman</name>
 	<email>scott@kitterman.com</email>
       </author>
-      <version>version 0.9.4.2</version>
+      <author>
+        <name>Barry Warsaw</name>
+        <email>barry@debian.org</email>
+      </author>
+      <version>version 0.10.0.1</version>
 
       <abstract>
 	This document describes the packaging of Python within the
@@ -42,8 +46,7 @@
 
       <copyright>
 	<copyrightsummary>
-	  Copyright &copy; 1999, 2001, 2003, 2006, 2009, 2010, 2011, 2012
-	  Software in the Public Interest
+	  Copyright &copy; 1999&mdash;2014 Software in the Public Interest
 	</copyrightsummary>
 	<p>
 	  This manual is free software; you can redistribute it and/or
@@ -74,6 +77,53 @@
 
     <toc detail="sect1">
 
+    <chapt id="python3">
+      <heading>On the move to Python 3</heading>
+	<p>
+	  Debian currently supports two Python stacks, one for Python 2
+	  and one for Python 3.  The long term goal for Debian is to
+	  reduce this to one stack, dropping the Python 2 stack at some
+	  time.  
+	  <url id="http://legacy.python.org/dev/peps/pep-0404/"
+	  name="PEP 404"> states that no more major Python 2 releases
+	  are planned, although the last released major version 2.7
+	  will see some extended support, documented in 
+	  <url id="http://legacy.python.org/dev/peps/pep-0466/"
+	  name="PEP 466">.
+	</p>
+	<p>
+	  Packages in Debian should use Python 3 if Python 3 is
+	  supported.  New packages should use Python 3 from the initial
+	  upload, new upstream versions for existing packages should
+	  use Python 3 if the new upstream version supports it.
+	</p>
+	    
+	<p><enumlist>
+	  <item>
+	    <p>
+	      Programs should use Python 3, and should not be packaged
+	      for Python 2 as well.  Python 3 should be used for the
+	      packaging if the packaging scripts use Python.
+	    </p>
+	  </item>
+	  <item>
+	    <p>
+	      Python libraries should be always packaged for Python 3
+	      if supported.  Python 2 libraries should be packaged, if
+	      applications found in the reverse dependencies are not
+	      yet supported by Python 3.
+	    </p>
+	  </item>
+	  <item>
+	    <p>
+	      Existing Python 2 libraries should not be dropped before
+	      the last reverse dependency is removed.
+	    </p>
+	  </item>
+	</enumlist></p>
+
+    </chapt>
+
     <chapt id="python">
       <heading>Python Packaging</heading>
       <sect id="versions">
@@ -88,7 +138,7 @@
 	  Python helper programs such as python-support and python-central.  None of
 	  these references apply to Python 3.  It is a design goal to fully specify
 	  required interfaces and functions in policy for Python 3 and to avoid
-	  enshrining specific implmentation details in policy.  Except as noted,
+	  enshrining specific implementation details in policy.  Except as noted,
 	  policy for Python 3 is the same as Python with the addition of the version
 	  number as needed to distinguish them.
 	</p>
@@ -117,7 +167,10 @@
 
 	<p>
 	  The set of currently supported python versions can be found in
-	  <file>/usr/share/python/debian_defaults</file>.  This file is in
+	  <file>/usr/share/python/debian_defaults</file>, the set of
+	  currently supported python3 versions can be found
+	  in <file>/usr/share/python3/debian_defaults</file>.  These
+	  files are in
 	  Python ConfigParser format and defines four variables in its
 	  DEFAULT section: default-version which is the current default
 	  Python runtime, supported-versions which is the set of runtimes
@@ -414,6 +467,44 @@
 	  programs included in the same package.
 	</p>
       </sect>
+      <sect id="wheels">
+        <heading>Wheels</heading>
+        <p>
+          <url id="http://legacy.python.org/dev/peps/pep-0427/"
+               name="PEP 427">
+          defines a built-package format called "wheels", which is a zip
+          format archive containing Python code and a "dist-info" metadata
+          directory, in a single file named with the .whl suffix.  As zip
+          files, wheels containing pure-Python can be put on sys.path and
+          modules in the wheel can be imported directly by Python's "import"
+          statement. (Importing extension modules from wheels is not yet
+          supported as of Python 3.4.)
+        </p><p>
+          Except as described below, packages must not build or provide
+          wheels.  They are redundant to the established way of providing
+          Python libraries to Debian users, take no advantage of distro-based
+          tools, and are less convenient to use.  E.g. they must be explicitly
+          added to sys.path, cannot be easily grepped, and stack traces
+          through zips are more difficult to debug.
+        </p><p>
+          A very limited set of wheel packages are available in the archive,
+          but these support the narrow purpose of providing the Python 3
+          built-in virtual environment creation executable
+          <prgn>pyvenv-3.x</prgn>, as well as the within-venv <prgn>pip</prgn>
+          executable, in a Debian policy compliant way.  The set of packages
+          providing wheels for this purpose are (by source package name):
+          chardet, distlib, html5lib, python-colorama, python-pip,
+          python-setuptools, python-urllib3, requests, and six.
+        </p><p>
+          Wheel packages supporting <prgn>pyvenv</prgn> and <prgn>pip</prgn>
+          are named with the <var>python-</var> prefix, and the <var>-whl</var>
+          suffix, e.g. <package>python-chardet-whl</package>.  When these
+          binary packages are installed, their .whl files must be placed in
+          the /usr/share/python-wheels directory.  Such wheels must be built
+          with the <tt>--universal</tt> flag so as to generate wheels
+          compatible with both Python 2 and Python 3.
+        </p>
+      </sect>
       <sect id="package_names">
 	<heading>Module Package Names</heading>
 	<p>
@@ -429,6 +520,10 @@
 	  allows, but this is not required if the binary package ships
 	  multiple modules.  In the latter case the maintainer chooses the
 	  name of the module which represents the package the most.
+
+          For subpackages such as <var>foo.bar</var>, the recommendation is to
+          name the binary packages <package>python-<var>foo.bar</var></package>
+          and <package>python3-<var>foo.bar</var></package>.
 
 	  Such a package should support the current Debian Python version,
 	  and more if possible (there are several tools to help implement
@@ -518,9 +613,10 @@ XS-Python-Version: all
           Provides in binary packages of the form
           <package>python-<var>X</var>.<var>Y</var><var>>foo</var></package>
 	  must be specified if the package contains an extension for more
-	  than one python version and other package with version specific
+	  than one python version and an other package with version specific
 	  dependencies on the package require it.  Provides are only for
-	  extensions, not modules.
+	  extensions, not modules.  Provides should only be rarely used for
+          Python packages and never for Python 3.
 	</p>
       </sect>
 

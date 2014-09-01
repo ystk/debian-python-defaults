@@ -6,6 +6,9 @@
 removes .pyc and .pyo files
 ---------------------------
 
+:Manual section: 1
+:Author: Piotr Ożarowski, 2012-201
+
 SYNOPSIS
 ========
   pyclean [-p PACKAGE | DIR_OR_FILE]
@@ -21,3 +24,4 @@ OPTIONS
 -q, --quiet	be quiet
 
 -p PACKAGE, --package=PACKAGE	specify Debian package name to clean
+  (combining with DIR_OR_FILE will additionally limit list of files)
