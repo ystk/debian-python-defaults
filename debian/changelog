@@ -1,3 +1,42 @@
+python-defaults (2.7.9-1) unstable; urgency=medium
+
+  * Bump version to 2.7.9.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 16 Mar 2015 23:32:04 +0100
+
+python-defaults (2.7.8-4) unstable; urgency=medium
+
+  [ Barry Warsaw ]
+  * Update policy document to clarify the purpose and use of the wheel
+    files.  No actual change in policy is made.
+
+ -- Scott Kitterman <scott@kitterman.com>  Mon, 02 Mar 2015 15:45:19 -0500
+
+python-defaults (2.7.8-3) unstable; urgency=medium
+
+  [ Michael Gilbert ]
+  * Make python-minimal a pre-dependency for python (closes: #769106).
+
+ -- Scott Kitterman <scott@kitterman.com>  Mon, 02 Feb 2015 16:12:38 -0500
+
+python-defaults (2.7.8-2) unstable; urgency=medium
+
+  [ Matthias Klose ]
+  * Build-depend on python2.7 and dpkg-dev versions to consistently
+    generate the i586-* symlinks. Closes: #758301.
+
+  [ Piotr Ożarowski ]
+  * dh_python2: add a warning abount missing dh-python in Build-Depends
+
+  [ Scott Kitterman ]
+  * Minor updates to python policy
+    - Reflect disuse of pyshared directory in favor of /usr/lib/python2.7/
+      dist-packages since python2.7 is the last and only python version
+      supported (Closes: #763451)
+    - Update python-central information to reflect its removal from Jessie
+
+ -- Scott Kitterman <scott@kitterman.com>  Fri, 24 Oct 2014 10:58:42 -0400
+
 python-defaults (2.7.8-1) unstable; urgency=medium
 
   [ Barry Warsaw ]
